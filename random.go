@@ -15,14 +15,15 @@ Comments and code in this file are used for describing and explaining a particul
 -->
 
 +++
-title = "Random thoughts"
+title = "A Random Blog Post"
 description = "Random generators and their usage in Go"
 author = "Christoph Berger"
 email = "chris@appliedgo.net"
-date = "2016-09-08"
-publishdate = "2016-09-08"
+date = "2016-09-29"
+draft = "true"
+publishdate = "2016-09-29"
 domains = ["Algorithm and Data Structures"]
-tags = ["random", "generator", ""]
+tags = ["random", "mathematics", "cryptography"]
 categories = ["Tutorial"]
 +++
 
@@ -39,15 +40,27 @@ The ideal computer is completely deterministic. For every input, the output is f
 
 Real-world computers are not quite the ideal machines that computer sciences would like them to be. There are a lot of sources in every computing device that produce more or less random data. Mouse movement, time between two keystrokes, the wall clock, counters like actual CPU usage, GPS receivers, movement sensors, and more.
 
-There are even parts that can produce true random data. Electronic elements like transistors, diodes, or resistors can generate static noise. Turn up an amplifier that has no input device attached, and you hear - static noise. And static noise is truly random information. An analog/digital converter can turn the noise into never-ending sequences of random bits.
+{{< figure src="/media/random/noise.png" class="imageLeft" alt="" >}}Electronic parts can also produce true random data. Transistors, diodes, or resistors can generate static noise. Turn up an amplifier that has no input device attached, and you hear - static noise. Tune an AM or FM radio between two stations, and you get - static noise.  And static noise is truly random information. An analog/digital converter can turn the noise into never-ending sequences of random bits.
 
-Still, these "natural" sources of random data suffer from asymmetries and systematic biases caused by various physical phenomena that are inherent to the chosen source. As a consequence, the generated random numbers are not uniformly distributed. Luckily, there are functions called "randomness extractors" that can fix this.
-
+Still, these "natural" sources of random data suffer from asymmetries and systematic biases caused by various physical phenomena that are inherent to the given source. Thus the generated random numbers are not uniformly distributed. Luckily, there are functions called ["randomness extractors"](https://en.wikipedia.org/wiki/Randomness_extractor) that can fix this, at the cost of a lower output rate.
 
 ### Generating pseudo-random numbers
 
 The second way is to simulate a source of random data. But how, if "randomness" is not part of the concept of a deterministic machine? The trick is to produce long sequences of bits and bytes that *appear* to be random. After a while, the sequence repeats, but for many consumers of random data this is perfectly fine.
 
+A very simple pseudo-random generator is a bit shift register with a feedback loop.
+
+* At each clock cycle, all bits in the register are shifted to the right.
+* The rightmost bit is added to the outgoing bit stream.
+* At two (arbitrary) positions of the register, the bits are extracted and fed into an Exclusive-OR (XOR) gate. The result of the XOR operation is fed back to the first bit of the register.
+
+(To recap: The XOR operation returns "true" if both input values are different, and "false" otherwise.)
+
+If this sounds a bit too abstract, watch the animation below. The values "true" and "false" are repesented by "1" and "0", respectively.
+
+!HYPE[Bit Shift Register](bitshift.html)
+
+At some point in time, however, the register contains a value that it contained earlier, and at this point, the cycle repeats.
 
 ## Go's `rand` packages
 
@@ -74,6 +87,8 @@ package main
 ### Links
 
 [Randomness extractor](https://en.wikipedia.org/wiki/Randomness_extractor)
+
+[Randomness tests](https://en.wikipedia.org/wiki/Randomness_tests)
 
 [/dev/random](https://en.wikipedia.org/wiki//dev/random)
 
