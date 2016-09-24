@@ -27,7 +27,7 @@ tags = ["random", "mathematics", "cryptography"]
 categories = ["Tutorial"]
 +++
 
-How to generate random numbers, and the difference between math/rand and crypt/rand.
+How to generate random numbers, and the difference between math/rand and crypto/rand.
 
 <!--more-->
 
@@ -56,20 +56,33 @@ A very simple pseudo-random generator is a bit shift register with a feedback lo
 
 (To recap: The XOR operation returns "true" if both input values are different, and "false" otherwise.)
 
-If this sounds a bit too abstract, watch the animation below. The values "true" and "false" are repesented by "1" and "0", respectively.
+If this sounds a bit too abstract, watch the animation below. The values "true" and "false" are represented by "1" and "0", respectively.
 
 !HYPE[Bit Shift Register](bitshift.html)
 
-At some point in time, however, the register contains a value that it contained earlier, and at this point, the cycle repeats.
+At some point in time, however, the register contains a value that it contained earlier, and at this point, the cycle repeats.o
+
+**In a generalized sense, this is how all pseudo-random number generators work. A deterministic algorithm produces a long series of seemingly random bits and bytes. Eventually the series will repeat, but depending on the algorithm, the output may still successfully pass various tests for randomness.**
 
 ## Go's `rand` packages
 
+Go has two packages that generate random numbers: `math/rand` and `crypto/rand`. Now with the above in mind you surely already have an idea why there are two of them: One is a pseudo-random number generator, the other makes use of a real source of random data (provided by the operating system).
+
+But yet - why do we need both? Can't we just use `crypto/rand` for everything and enjoy truly random numbers for all purposes?
+
+You guessed it already: The answer is speed. True sources of randomness can produce only so many bits at a time. And the aforementioned randomness extractor reduces the throughput even more.
+
+So unless you really need cryptographically secure random numbers, use `math/rand`. It will be sufficient for most of your needs.
+
+Now let's have a quick look into both of these packages.
 
 ### math/rand
 
 
-### crypt
 
+### crypto/rand
+
+[/dev/random](https://en.wikipedia.org/wiki//dev/random)
 
 ## The code
 */
