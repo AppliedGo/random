@@ -60,21 +60,18 @@ If this sounds a bit too abstract, watch the animation below. The values "true" 
 
 !HYPE[Bit Shift Register](bitshift.html)
 
-At some point in time, however, the register contains a value that it contained earlier, and at this point, the cycle repeats.o
+At some point in time, however, the register contains a value that it contained earlier, and at this point, the cycle repeats.
 
 **In a generalized sense, this is how all pseudo-random number generators work. A deterministic algorithm produces a long series of seemingly random bits and bytes. Eventually the series will repeat, but depending on the algorithm, the output may still successfully pass various tests for randomness.**
 
-## Go's `rand` packages
+## Go's rand packages
 
-Go has two packages that generate random numbers: `math/rand` and `crypto/rand`. Now with the above in mind you surely already have an idea why there are two of them: One is a pseudo-random number generator, the other makes use of a real source of random data (provided by the operating system).
+Go has two packages that generate random numbers: `math/rand` and `crypto/rand`. Now with the above in mind you surely already have an idea why there are two of them: One is a pseudo-random number generator, the other makes use of a source of truly random data (provided by the operating system).
 
 But yet - why do we need both? Can't we just use `crypto/rand` for everything and enjoy truly random numbers for all purposes?
 
-You guessed it already: The answer is speed. True sources of randomness can produce only so many bits at a time. And the aforementioned randomness extractor reduces the throughput even more.
+A brief look into each of the two packages may help answering this question.
 
-So unless you really need cryptographically secure random numbers, use `math/rand`. It will be sufficient for most of your needs.
-
-Now let's have a quick look into both of these packages.
 
 ### math/rand
 
@@ -84,6 +81,16 @@ Now let's have a quick look into both of these packages.
 
 [/dev/random](https://en.wikipedia.org/wiki//dev/random)
 
+True sources of randomness can produce only so many bits at a time. (Side note: Crypto experts tell you the same by saying things like, "cryptographic random sources have a *limited pool of entropy*".) And the aforementioned randomness extractor reduces the throughput even more.
+
+
+### Conclusion
+
+
+Unless you really need cryptographically secure random numbers, use `math/rand`. It will be sufficient for most of your needs. Plus, it offers a richer API
+
+
+
 ## The code
 */
 
@@ -92,8 +99,6 @@ package main
 
 /*
 ## Odds and Ends
-
-### The code
 
 
 
