@@ -33,7 +33,7 @@ How to generate random numbers, and the difference between math/rand and crypto/
 
 ## Generating randomness on deterministic machines
 
-The ideal computer is completely deterministic. For every input, the output is foreseeable. Trying to generate random data on such a machine seems odd at first. But there are two ways to overcome the dichotomy between determinism and randomness.
+The ideal computer is completely deterministic[^1][except]. For every input, the output is foreseeable. Trying to generate random data on such a machine seems odd at first. But there are two ways to overcome the dichotomy between determinism and randomness.
 
 
 ### Exploiting sources of real randomness
@@ -75,6 +75,10 @@ A brief look into each of the two packages may help answering this question.
 
 ### math/rand
 
+What sets `math/rand` apart from `crypto/rand` is the rich API that can be divided into two parts:
+
+#### Methods that return uniformly distributed random values in different formats
+
 
 
 ### crypto/rand
@@ -112,5 +116,8 @@ package main
 
 [Yarrow algorithm](https://en.wikipedia.org/wiki/Yarrow_algorithm)
 
+- - -
+
+[except]: Except for that oldy moldy i486 tower in the corner of your garage running Linux 1.0 that sometimes
 
 */
