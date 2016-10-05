@@ -77,7 +77,52 @@ A brief look into each of the two packages may help answering this question.
 
 What sets `math/rand` apart from `crypto/rand` is the rich API that can be divided into two parts:
 
-#### Methods that return uniformly distributed random values in different formats
+#### Methods that return uniformly distributed random values in different numeric formats.
+
+First, there are two functions returning float values between 0 and 1 (but not including 1):
+
+```go
+func Float32() float32
+func Float64() float64
+```
+
+Second, there are a couple of methods returning integers of various bit length - 31, 32, 63, and 64 bits:
+
+```go
+func Int() int
+func Int31() int32
+func Int31n(n int32) int32
+func Int63() int64
+func Int63n(n int64) int64
+func Intn(n int) int
+func Uint32() uint32
+```
+
+A bit length of 31 or 63, respectively, ensures that the value is positive (that is, the topmost bit is zero) even though the returned type is a signed integer.
+
+
+#### Methods that return `float64` values according to a given probability distribution - Normal distribution and exponential distribution:
+
+```go
+func NormFloat64() float64
+func ExpFloat64() float64
+```
+
+Normal distribution assumes that values around 0.5 have highest probability
+#### And there is a Zipf type that generates Zipf-distributed values:
+
+```go
+type Zipf
+```
+
+The Zipf distribution requires a special initialization based on a float and two ints, and it returns uint64 values, rather than flaot64. (Without going into details, the Zipf distribution models everyday observations like, "a country has a few large cities, many smaller cities, and large numbers of small villages."
+
+#### And finally, there is a method for generating a slice of permutated (i.e., shuffled) integers:
+
+```go
+func Perm(n int) []int
+```
+
 
 
 
