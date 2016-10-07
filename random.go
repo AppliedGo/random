@@ -75,54 +75,56 @@ A brief look into each of the two packages may help answering this question.
 
 ### math/rand
 
-What sets `math/rand` apart from `crypto/rand` is the rich API that can be divided into two parts:
+One aspect that sets `math/rand` apart from `crypto/rand` is the rich API that includes:
 
-#### Methods that return uniformly distributed random values in different numeric formats.
+* Methods that return uniformly distributed random values in different numeric formats (float33, float64, int32, int64,...).
+* Methods that return `float64` values according to a non-uniform distribution - either Normal distribution and exponential distribution.
+* A type named Zipf that generates Zipf-distributed values.
+* And finally, a method for generating a slice of permuted (i.e., shuffled) integers.
 
-First, there are two functions returning float values between 0 and 1 (but not including 1):
+Another one is speed. Not because `math/rand` is such a darn fast, micro-optimized package, but rather because `crypto/rand` is slow. It has to be - more about this later.
 
-```go
-func Float32() float32
-func Float64() float64
-```
-
-Second, there are a couple of methods returning integers of various bit length - 31, 32, 63, and 64 bits:
+The internal pseudo-random number generator is quite simple, in the sense of "does not require complex math calculations". You can find it in [`src/math/rand/rng.go`](https://golang.org/src/math/rand/rng.go) implemented by the function `Int63()`:
 
 ```go
-func Int() int
-func Int31() int32
-func Int31n(n int32) int32
-func Int63() int64
-func Int63n(n int64) int64
-func Intn(n int) int
-func Uint32() uint32
+// from rng.go
+
+type rngSource struct {
+	tap  int         // index into vec
+	feed int         // index into vec
+	vec  [_LEN]int64 // current feedback register
+}
+
+func (rng *rngSource) Int63() int64 {
+	rng.tap--
+	if rng.tap < 0 {
+		rng.tap += _LEN
+	}
+
+	rng.feed--
+	if rng.feed < 0 {
+		rng.feed += _LEN
+	}
+
+	x := (rng.vec[rng.feed] + rng.vec[rng.tap]) & _MASK
+	rng.vec[rng.feed] = x
+	return x
+}
 ```
 
-A bit length of 31 or 63, respectively, ensures that the value is positive (that is, the topmost bit is zero) even though the returned type is a signed integer.
+* `_LEN` is a constant value set to 607.
+* `rng.vec` is an array of length `_LEN` that gets initialized with seed values through the `Seed()` function.
+* `tap` and `feed` are initialized to 0 and 334, respectively.
+* `_MASK` is a 64-bit value that has all bits except the highest one set to 1.
 
+As you can see, the algorithm consist of four simple steps:
 
-#### Methods that return `float64` values according to a given probability distribution - Normal distribution and exponential distribution:
+1. Step backwards through the array at two indexes (`tap` and `feed`). If an index reaches zero, it is set to the end of the array.
+2. Add the values found at the two indexes and set the highest bit to zero (by ANDing it with `_MASK`), to ensure a positive value.
+3. Save the result to the array at index `feed`.
+4. Return the result.
 
-```go
-func NormFloat64() float64
-func ExpFloat64() float64
-```
-
-Normal distribution assumes that values around 0.5 have highest probability
-#### And there is a Zipf type that generates Zipf-distributed values:
-
-```go
-type Zipf
-```
-
-The Zipf distribution requires a special initialization based on a float and two ints, and it returns uint64 values, rather than flaot64. (Without going into details, the Zipf distribution models everyday observations like, "a country has a few large cities, many smaller cities, and large numbers of small villages."
-
-#### And finally, there is a method for generating a slice of permutated (i.e., shuffled) integers:
-
-```go
-func Perm(n int) []int
-```
-
+Step 3 ensures that the cycle time of the RNG is much longer than the array itself.
 
 
 
