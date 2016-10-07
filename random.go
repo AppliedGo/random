@@ -33,7 +33,7 @@ How to generate random numbers, and the difference between math/rand and crypto/
 
 ## Generating randomness on deterministic machines
 
-The ideal computer is completely deterministic[^1][except]. For every input, the output is foreseeable. Trying to generate random data on such a machine seems odd at first. But there are two ways to overcome the dichotomy between determinism and randomness.
+The ideal computer is completely deterministic. (Well, except perhaps for the oldy moldy i486 Tower PC in the back of your garage running Linux 1.0 and sometimes acting like crazy aunt Maggie.) For every input, the output is foreseeable. Trying to generate random data on such a machine seems odd at first. But there are two ways to overcome the dichotomy between determinism and randomness.
 
 
 ### Exploiting sources of real randomness
@@ -165,6 +165,5 @@ package main
 
 - - -
 
-[except]: Except for that oldy moldy i486 tower in the corner of your garage running Linux 1.0 that sometimes
 
 */
