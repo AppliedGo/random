@@ -33,16 +33,21 @@ How to generate random numbers, and the difference between math/rand and crypto/
 
 ## Generating randomness on deterministic machines
 
-The ideal computer is completely deterministic. (Well, except perhaps for the oldy moldy i486 Tower PC in the back of your garage running Linux 1.0 and sometimes acting like crazy aunt Maggie.) For every input, the output is foreseeable. Trying to generate random data on such a machine seems odd at first. But there are two ways to overcome the dichotomy between determinism and randomness.
+The ideal computer is completely deterministic. (Well, except perhaps for the oldy moldy i486 Tower PC in the back of your garage running Linux 1.0 and sometimes acting kinda capricious for no particular reason.) For every input, the output is foreseeable. Trying to generate random data on a machine where everything is determined seems odd at first. But there are two ways to overcome the dichotomy between determinism and randomness.
 
 
 ### Exploiting sources of real randomness
 
-Real-world computers are not quite the ideal machines that computer sciences would like them to be. There are a lot of sources in every computing device that produce more or less random data. Mouse movement, time between two keystrokes, the wall clock, counters like actual CPU usage, GPS receivers, movement sensors, and more.
+Real-world computers are not quite the ideal machines that computer sciences would like them to be. There are a lot of sources in every computing device that produce more or less random data. Mouse movement, time between two keystrokes, the wall clock, activity counters (CPU load, disk activity, network activity, number of processes, etc), GPS receivers, movement sensors, and more can be used to generate continuous streams of random bits.
 
-{{< figure src="/media/random/noise.png" class="imageLeft" alt="" >}}Electronic parts can also produce true random data. Transistors, diodes, or resistors can generate static noise. Turn up an amplifier that has no input device attached, and you hear - static noise. Tune an AM or FM radio between two stations, and you get - static noise.  And static noise is truly random information. An analog/digital converter can turn the noise into never-ending sequences of random bits.
+{{< figure src="/media/random/noise.png" class="imageLeft" alt="" >}} Looking outside of a computer, we can find other electronic parts that can produce true random data. For example, resistors can generate thermal noise, and Zener diodes can generate Zener breakdown noise. Transistors can be wired to produce static noise. And if you turn up an amplifier that has no input device attached, you hear amplified noise from the circuits inside. Or tune an AM or FM radio between two stations, and you get atmospheric noise.
 
-Still, these "natural" sources of random data suffer from asymmetries and systematic biases caused by various physical phenomena that are inherent to the given source. Thus the generated random numbers are not uniformly distributed. Luckily, there are functions called ["randomness extractors"](https://en.wikipedia.org/wiki/Randomness_extractor) that can fix this, at the cost of a lower output rate.
+And even nature itself provides sources of random data. Photons that arrive at a semi-transparent mirror are either reflected or can pass through, in a random way. Nuclear decay creates events in a Geiger counter in random intervals. Vacuum energy fluctuates randomly.
+
+All this noise is truly random information. An analog/digital converter can turn the noise into never-ending sequences of random bits.
+
+Still, these "natural" sources of random data suffer from asymmetries and systematic biases caused by various physical phenomena that are inherent to the given source. This means that the produced bit stream contains much more 1s than 0s on average, or vice versa. Thus the generated random numbers are not uniformly distributed.  Luckily, there are functions called ["randomness extractors"](https://en.wikipedia.org/wiki/Randomness_extractor) that can fix this, at the cost of a lower output rate. (I won't go into the details here.)
+
 
 ### Generating pseudo-random numbers
 
@@ -87,7 +92,7 @@ Another one is speed. Not because `math/rand` is such a darn fast, micro-optimiz
 The internal pseudo-random number generator is quite simple, in the sense of "does not require complex math calculations". You can find it in [`src/math/rand/rng.go`](https://golang.org/src/math/rand/rng.go) implemented by the function `Int63()`:
 
 ```go
-// from rng.go
+// from rng.go - (c) the Go team
 
 type rngSource struct {
 	tap  int         // index into vec
@@ -112,6 +117,8 @@ func (rng *rngSource) Int63() int64 {
 }
 ```
 
+Remarks on the variables and constants used in this code snippet:
+
 * `_LEN` is a constant value set to 607.
 * `rng.vec` is an array of length `_LEN` that gets initialized with seed values through the `Seed()` function.
 * `tap` and `feed` are initialized to 0 and 334, respectively.
@@ -124,23 +131,28 @@ As you can see, the algorithm consist of four simple steps:
 3. Save the result to the array at index `feed`.
 4. Return the result.
 
-Step 3 ensures that the cycle time of the RNG is much longer than the array itself.
+Although it might not be easy to see at a first glance, this algorithm is a variant of the bit shift register model discussed above. See the `vec` array as a very large bit register, and `tap` and `feed` as the two positions where the values are extracted from the register, to be XOR'ed and re-inserted into the register. However, rather than shifting bits through a register (which would be fine if done in hardware but expensive if done in software), the code just cycles two indexes through the array.  Also, instead of XOR'ing tap and feed, it adds the two and adjusts the result to fit into the range of `[0..2^63)`.
+
+This animation should make the similarities (and the differences) more apparent:
+
+!HYPE[math/rand algorithm](mathrand.html)
 
 
 
 ### crypto/rand
 
-[/dev/random](https://en.wikipedia.org/wiki//dev/random)
+`crypto/rand` does not implement an RNG algorithm; rather, it relies on the operating system to deliver cryptographically secure random numbers. On Unix-like systems, this is usually a virtual device named like [`/dev/random`](https://en.wikipedia.org/wiki//dev/random).
 
 True sources of randomness can produce only so many bits at a time. (Side note: Crypto experts tell you the same by saying things like, "cryptographic random sources have a *limited pool of entropy*".) And the aforementioned randomness extractor reduces the throughput even more.
 
 
-### Conclusion
+### Which rand package to choose
 
+At this point, you surely already have an idea which rand package you need to use for your purpose. Nevertheless, let's summarize the criteria for picking the correct package:
 
-Unless you really need cryptographically secure random numbers, use `math/rand`. It will be sufficient for most of your needs. Plus, it offers a richer API
+* Unless you really need cryptographically secure random numbers, use `math/rand`. It will be sufficient for most of your needs. Plus, it offers a rich API (compared to `crypto/rand`) that offers different result types as well as a couple of non-uniform distributions (normal, exponential, and Zipf distribution).
 
-
+* On the other hand, if the generated random value is to be used anywhere in a security context, `crypto/rand` is the only choice. Don't even think of using `math/rand` for any security-related code, only because it is faster or has more features. What you need here is cryptographically strong random number generation, period.
 
 ## The code
 */
@@ -152,8 +164,22 @@ package main
 ## Odds and Ends
 
 
+### Third party packages for fun and profit
 
-### Links
+Below are some packages that I came across while doing research for this blog post. The list is not complete, and neither the selection nor the sort order were driven by any particular criteria other than, "hmm, that looks interesting."
+
+Here we go:
+
+**[`random:`](https://godoc.org/github.com/DexterLB/traytor/random)** A package that extends the `math/rand` API by new result types (bool, sign, unit vector) and result ranges (between 0 and 2*pi, between a and b,...). It is part of a raytracer package.
+
+**[`distuv:`](https://godoc.org/github.com/gonum/stat/distuv#pkg-variables)** A rather heavyweight package, featuring a large range of distribution types: Bernoulli, Beta, Categorial, Exponential, Gamma, Laplace, LogNormal, Normal, Uniform, and Weibull. It is part of the [`stat` package](https://github.com/gonum/stat) from the [`gonum` project](https://github.com/gonum).
+
+**[`golang-petname:`](https://github.com/dustinkirkland/golang-petname)** Delivers random combinations of words to be used as a readable "ID". Similar to, for example, auto-generated container names in Docker, so that you can refer to a Docker image  as "awesome_swartz" instead of "5fe15f7e7876".
+
+**[`go-randomdata:`](https://github.com/Pallinder/go-randomdata)** Generate random first names, last names, city names, email addresses, paragraphs, dates, and more. Good for creating mock-up data.
+
+
+### Links from the article
 
 [Randomness extractor](https://en.wikipedia.org/wiki/Randomness_extractor)
 
