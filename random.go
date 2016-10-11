@@ -19,9 +19,9 @@ title = "A Random Blog Post"
 description = "Random generators and their usage in Go"
 author = "Christoph Berger"
 email = "chris@appliedgo.net"
-date = "2016-09-29"
+date = "2016-10-11"
 draft = "true"
-publishdate = "2016-09-29"
+publishdate = "2016-10-11"
 domains = ["Algorithm and Data Structures"]
 tags = ["random", "mathematics", "cryptography"]
 categories = ["Tutorial"]
@@ -145,6 +145,8 @@ This animation should make the similarities (and the differences) more apparent:
 
 True sources of randomness can produce only so many bits at a time. (Side note: Crypto experts tell you the same by saying things like, "cryptographic random sources have a *limited pool of entropy*".) And the aforementioned randomness extractor reduces the throughput even more.
 
+For this reason, some Unix systems offer another device, `/dev/urandom`, that does not have this rate limitation. Usually, `/dev/urandom` is a cryptographically secure pseudo-random number generator (CSPRNG). 
+
 
 ### Which rand package to choose
 
@@ -159,6 +161,24 @@ At this point, you surely already have an idea which rand package you need to us
 
 // ## Imports and globals
 package main
+
+[2]s uint64
+
+func rotl(x uint64, k int) {
+	return (x << k) | ( x >> (64-k))
+}
+
+func next() uint64 {
+	s0, s1 := s
+	result := s0 - s1
+	s1 ^= s0
+	s[0] = rotl(s0, 55) ^ s1 ^ (s1 << 14)
+	s[1] = rotl(s1, 36)
+	return result
+}
+
+func jump() {
+	[]jump := { 0xbeac0467eba5facb, 0xd86b048b86aa9922 }
 
 /*
 ## Odds and Ends
