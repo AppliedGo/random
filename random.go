@@ -216,7 +216,7 @@ Below are some packages that I came across while doing research for this blog po
 **[`go-randomdata:`](https://github.com/Pallinder/go-randomdata)** Generates random first names, last names, city names, email addresses, paragraphs, dates, and more. Good for creating mock-up data.
 
 
-- - -
+### An apology
 
 Last not least, an apology is in place. My long-time readers are used to get an article every one or two weeks, but this time I failed badly delivering in time. I plan to overhaul my publishing strategy. Maybe I'll post shorter articles but then I have to struggle keeping the posts interesting for you. I am still not decided but for now rest assured that I have no intention to abandon this blog; quite the opposite is true.
 
