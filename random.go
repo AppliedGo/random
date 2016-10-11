@@ -201,6 +201,8 @@ func main() {
 
 /*
 
+As usual, you can get this code via `go get github.com/appliedgo/random`, but this time you might be faster copying & pasting the code right into your editor.
+
 (Also avaialble on the [playground](https://play.golang.org/p/bzQjF5_9g7).)
 
 ## Odds and Ends
