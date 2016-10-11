@@ -40,20 +40,20 @@ The ideal computer is completely deterministic. (Well, except perhaps for the ol
 
 Real-world computers are not quite the ideal machines that computer sciences would like them to be. There are a lot of sources in every computing device that produce more or less random data. Mouse movement, time between two keystrokes, the wall clock, activity counters (CPU load, disk activity, network activity, number of processes, etc), GPS receivers, movement sensors, and more can be used to generate continuous streams of random bits.
 
-{{< figure src="/media/random/noise.png" class="imageLeft" alt="" >}} Looking outside of a computer, we can find other electronic parts that can produce true random data. For example, resistors can generate thermal noise, and Zener diodes can generate Zener breakdown noise. Transistors can be wired to produce static noise. And if you turn up an amplifier that has no input device attached, you hear amplified noise from the circuits inside. Or tune an AM or FM radio between two stations, and you get atmospheric noise.
+{{< figure src="/media/random/noise.png" class="imageLeft" alt="" >}} Simple electronic circuits can also produce true random data. For example, resistors can generate thermal noise, and Zener diodes can generate Zener breakdown noise. Transistors can be wired to produce static noise. If you turn up an amplifier that has no input device attached, you hear amplified noise from the circuits inside. Or tune an AM or FM radio between two stations, and you get atmospheric noise.
 
 And even nature itself provides sources of random data. Photons that arrive at a semi-transparent mirror are either reflected or can pass through, in a random way. Nuclear decay creates events in a Geiger counter in random intervals. Vacuum energy fluctuates randomly.
 
 All this noise is truly random information. An analog/digital converter can turn the noise into never-ending sequences of random bits.
 
-Still, these "natural" sources of random data suffer from asymmetries and systematic biases caused by various physical phenomena that are inherent to the given source. This means that the produced bit stream contains much more 1s than 0s on average, or vice versa. Thus the generated random numbers are not uniformly distributed.  Luckily, there are functions called ["randomness extractors"](https://en.wikipedia.org/wiki/Randomness_extractor) that can fix this, at the cost of a lower output rate. (I won't go into the details here.)
+Still, these "natural" sources of random data suffer from asymmetries and systematic biases caused by various physical phenomena that are inherent to the given source. Simply put, the produced bit stream may contain much more 1s than 0s on average, or vice versa. Thus the generated random numbers are not uniformly distributed.  Luckily, so-called "randomness extractors" can fix this, at the cost of a lower output rate. (I won't go into the details here, see [here](https://en.wikipedia.org/wiki/Hardware_random_number_generator) for more on this topic.)
 
 
 ### Generating pseudo-random numbers
 
 The second way is to simulate a source of random data. But how, if "randomness" is not part of the concept of a deterministic machine? The trick is to produce long sequences of bits and bytes that *appear* to be random. After a while, the sequence repeats, but for many consumers of random data this is perfectly fine.
 
-A very simple pseudo-random generator is a bit shift register with a feedback loop.
+Today, a range of pseudo-random number generators (usually abbreviated as "PRNG") exist. A very simple PRNG is a bit shift register with a feedback loop.
 
 * At each clock cycle, all bits in the register are shifted to the right.
 * The rightmost bit is added to the outgoing bit stream.
@@ -68,6 +68,9 @@ If this sounds a bit too abstract, watch the animation below. The values "true" 
 At some point in time, however, the register contains a value that it contained earlier, and at this point, the cycle repeats.
 
 **In a generalized sense, this is how all pseudo-random number generators work. A deterministic algorithm produces a long series of seemingly random bits and bytes. Eventually the series will repeat, but depending on the algorithm, the output may still successfully pass various tests for randomness.**
+
+There is one more point to consider: Being a deterministic algorithm, a new PRNG instance always starts at the same point of the cycle. So each time a PRNG is reset, it would deliver exactly the same sequence of numbers again. To avoid this, the algorithm can be set to start at an arbitrary value called **seed value**. This seed can be taken from a source that is known to change over time. In the simplest case, this can be the system time (`time.Now().UnixNano()` comes to mind), but sources that are more random (as described above) deliver better results.
+
 
 ## Go's rand packages
 
@@ -145,7 +148,9 @@ This animation should make the similarities (and the differences) more apparent:
 
 True sources of randomness can produce only so many bits at a time. (Side note: Crypto experts tell you the same by saying things like, "cryptographic random sources have a *limited pool of entropy*".) And the aforementioned randomness extractor reduces the throughput even more.
 
-For this reason, some Unix systems offer another device, `/dev/urandom`, that does not have this rate limitation. Usually, `/dev/urandom` is a cryptographically secure pseudo-random number generator (CSPRNG). 
+For this reason, Unix systems offer another device, `/dev/urandom`, that does not have this rate limitation. Usually, `/dev/urandom` is a [cryptographically secure pseudo-random number generator (CSPRNG)](https://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator). Some Unixes even use a CSPRNG for both `/dev/urandom` and `/dev/random`. This CSPRNG must still be seeded with a truly random value though.
+
+Even though CSPRNG's are faster than a source of true randomness, they usually are considerably slower than a typical "standard" PRNG. First, the algorithm must be more complex as it has to ensure that the generated value stream is cryptographically secure. Second, a CSPRNG instance must be guarded against simultaneous access from multiple processes, since each request for a new random value also changes the CSPRNG's internal state. [This blog post](http://blog.sgmansfield.com/2016/01/locking-in-crypto-rand/) explains the details and also compares the speed of `crypto/rand` directly against that of `math/rand`.
 
 
 ### Which rand package to choose
@@ -156,29 +161,43 @@ At this point, you surely already have an idea which rand package you need to us
 
 * On the other hand, if the generated random value is to be used anywhere in a security context, `crypto/rand` is the only choice. Don't even think of using `math/rand` for any security-related code, only because it is faster or has more features. What you need here is cryptographically strong random number generation, period.
 
-## The code
+
+## Some code - just for fun
+
+If you have time to kill, inspect the following code and try to find out how it shuffles the bytes around to generate its output. Hint: The code is an (incomplete) implementation of an algorithm is called "xoroshiro128+". [This PRNG shootout](http://xoroshiro.di.unimi.it/) includes this and a couple of other PRNG algorithms. I ported the code straight from the C implementation available on that site. (Although I must admit that there is [prior art](https://github.com/dgryski/go-xoroshiro/blob/master/xoro.go) available.)
 */
 
-// ## Imports and globals
+// (No explanations this time.)
 package main
 
-[2]s uint64
+import (
+	"fmt"
+	"time"
+)
 
-func rotl(x uint64, k int) {
-	return (x << k) | ( x >> (64-k))
+var (
+	s [2]uint64
+)
+
+func rotl(x uint64, k uint) uint64 {
+	return (x << k) | (x >> (64 - k))
 }
 
 func next() uint64 {
-	s0, s1 := s
-	result := s0 - s1
+	s0, s1 := s[0], s[1]
+	result := s0 + s1
 	s1 ^= s0
 	s[0] = rotl(s0, 55) ^ s1 ^ (s1 << 14)
 	s[1] = rotl(s1, 36)
 	return result
 }
 
-func jump() {
-	[]jump := { 0xbeac0467eba5facb, 0xd86b048b86aa9922 }
+func main() {
+	s[0], s[1] = uint64(time.Now().UnixNano()^0x3bfa8764f685bd1c), uint64(time.Now().UnixNano()^0x5a2fdc2bf68cedb3) // silly seed
+	for i := 0; i < 10; i++ {
+		fmt.Println(next())
+	}
+}
 
 /*
 ## Odds and Ends
@@ -186,9 +205,7 @@ func jump() {
 
 ### Third party packages for fun and profit
 
-Below are some packages that I came across while doing research for this blog post. The list is not complete, and neither the selection nor the sort order were driven by any particular criteria other than, "hmm, that looks interesting."
-
-Here we go:
+Below are some packages that I came across while doing research for this blog post. The list is not complete, and neither the selection nor the sort order were driven by any particular criteria other than, "hmm, that looks interesting." Here we go:
 
 **[`random:`](https://godoc.org/github.com/DexterLB/traytor/random)** A package that extends the `math/rand` API by new result types (bool, sign, unit vector) and result ranges (between 0 and 2*pi, between a and b,...). It is part of a raytracer package.
 
@@ -196,20 +213,13 @@ Here we go:
 
 **[`golang-petname:`](https://github.com/dustinkirkland/golang-petname)** Delivers random combinations of words to be used as a readable "ID". Similar to, for example, auto-generated container names in Docker, so that you can refer to a Docker image  as "awesome_swartz" instead of "5fe15f7e7876".
 
-**[`go-randomdata:`](https://github.com/Pallinder/go-randomdata)** Generate random first names, last names, city names, email addresses, paragraphs, dates, and more. Good for creating mock-up data.
+**[`go-randomdata:`](https://github.com/Pallinder/go-randomdata)** Generates random first names, last names, city names, email addresses, paragraphs, dates, and more. Good for creating mock-up data.
 
-
-### Links from the article
-
-[Randomness extractor](https://en.wikipedia.org/wiki/Randomness_extractor)
-
-[Randomness tests](https://en.wikipedia.org/wiki/Randomness_tests)
-
-[/dev/random](https://en.wikipedia.org/wiki//dev/random)
-
-[Yarrow algorithm](https://en.wikipedia.org/wiki/Yarrow_algorithm)
 
 - - -
 
+Last not least, an apology is in place. My long-time readers are used to get an article every one or two weeks, but this time I failed badly delivering in time. I plan to overhaul my publishing strategy. Maybe I'll post shorter articles but then I have to struggle keeping the posts interesting for you. I am still not decided but for now rest assured that I have no intention to abandon this blog; quite the opposite is true.
+
+So the next post *will* arrive, and until then, happy coding!
 
 */
