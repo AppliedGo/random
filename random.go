@@ -200,6 +200,9 @@ func main() {
 }
 
 /*
+
+(Also avaialble on the [playground](https://play.golang.org/p/bzQjF5_9g7).)
+
 ## Odds and Ends
 
 
