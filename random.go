@@ -140,6 +140,7 @@ This animation should make the similarities (and the differences) more apparent:
 
 !HYPE[math/rand algorithm](mathrand.html)
 
+The downside of `math/rand` is that the quality of the generated "randomness" is not high enough for being used in cryptographic algorithms. The data it generates might contain unforeseen repetitions or other patterns. Cryptanalysts can reveal these patterns using statistical methods. So for cryptographic purposes, we need something different, which is why `crypto/rand` exists.
 
 
 ### crypto/rand
@@ -227,4 +228,9 @@ Last not least, an apology is in place. My long-time readers are used to get an 
 
 So the next post *will* arrive, and until then, happy coding!
 
+- - -
+
+**Changelog**
+
+2016-10-20: Section math/rand: Pointed out that `math/rand` is not cryptographically secure.
 */
