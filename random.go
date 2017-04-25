@@ -22,7 +22,7 @@ email = "chris@appliedgo.net"
 date = "2016-10-11"
 draft = "false"
 publishdate = "2016-10-11"
-domains = ["Algorithm and Data Structures"]
+domains = ["Algorithms and Data Structures"]
 tags = ["random", "mathematics", "cryptography"]
 categories = ["Tutorial"]
 +++
