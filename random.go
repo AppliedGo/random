@@ -22,9 +22,9 @@ email = "chris@appliedgo.net"
 date = "2016-10-11"
 draft = "false"
 publishdate = "2016-10-11"
-domains = ["Algorithms and Data Structures"]
+categories = ["Algorithms and Data Structures"]
 tags = ["random", "mathematics", "cryptography"]
-categories = ["Tutorial"]
+articletypes = ["Tutorial"]
 +++
 
 How to generate random numbers, and the difference between math/rand and crypto/rand.
